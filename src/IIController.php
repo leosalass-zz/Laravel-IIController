@@ -10,7 +10,7 @@ use Validator;
 
 class IIController extends Controller
 {
-    public function store(Request $request, $model, $current_user_fk, $parent_counter = null)
+    public function store($request, $model, $current_user_fk = null, $parent_counter = null)
     {
         $data = $request;
         if ($current_user_fk != null) {
@@ -104,8 +104,8 @@ class IIController extends Controller
         try {
             $object = $model::where('id', $request->id);
             $object->update($request->except($request_exceptions_array));
+            IIResponse::set_data(['id' => $request->id]);
         } catch (\Exception $e) {
-            ResponseController::set_errors(true);
             IIResponse::set_errors("error actualizando el registro");
             IIResponse::set_errors($e->getMessage());
             IIResponse::set_status_code('BAD REQUEST');
@@ -123,6 +123,7 @@ class IIController extends Controller
                 $object = $model::find($id);
                 $object->parent->$parent_counter--;
                 $object->parent->save();
+                IIResponse::set_data(['id' => $id]);
             } catch (\Exception $e) {
                 IIResponse::set_errors("error restando el contador, el registro no ha sido eliminado");
                 IIResponse::set_errors($e->getMessage());
