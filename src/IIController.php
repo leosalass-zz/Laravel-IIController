@@ -78,7 +78,7 @@ class IIController extends Controller
         if ($pagination != null) {
             $object = $model::paginate($pagination);
         } else {
-            $oobject = $model::all();
+            $object = $model::all();
         }
 
         IIResponse::set_data($object);
