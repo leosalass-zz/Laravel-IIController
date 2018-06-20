@@ -3,8 +3,10 @@
 namespace Immersioninteractive\GenericController;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use IIResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Validator;
 
 class IIController extends Controller
 {
@@ -46,7 +48,7 @@ class IIController extends Controller
     {
         if ($id != null) {
 
-            $table = $model->getTable();
+            $table = with(new $model)->getTable();
 
             $validator = Validator::make(['id' => $id], [
                 'id' =>
@@ -59,16 +61,27 @@ class IIController extends Controller
             ]);
 
             if ($validator->fails()) {
-                IIResponse::set_errors($validator->errors()->toArray());
+                foreach ($validator->errors()->toArray() as $error) {
+                    IIResponse::set_errors($error[0]);
+                }
                 IIResponse::set_status_code('BAD REQUEST');
                 return IIResponse::response();
             }
 
             $object = $model::find($id);
-            $relations = $model::relation_names();
-            $object['relations'] = $relations;
-            foreach ($relations as $relation_name) {
-                $object[$relation_name] = $object->$relation_name;
+
+            try {
+                /**
+                 * Custom Model method that returns an array with relation names
+                 */
+                $relations = $model::relation_names();
+                
+                $object['relations'] = $relations;
+                foreach ($relations as $relation_name) {
+                    $object[$relation_name] = $object->$relation_name;
+                }
+            } catch (\Exception $e) {
+
             }
 
             IIResponse::set_data($object);
