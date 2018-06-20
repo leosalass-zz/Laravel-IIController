@@ -1,9 +1,9 @@
 {
-    "name": "immersioninteractive/Laravel-IIController",
+    "name": "immersioninteractive/GenericController",
     "type": "library",
     "description": "Generic Controller class to make our work easier with Laravel",
     "keywords": ["Laravel","Generic"],
-    "homepage": "https://github.com/leosalass/GenericController",
+    "homepage": "https://github.com/leosalass/Laravel-IIController",
     "license": "MIT",
     "authors": [{
         "name": "Leonardo Salas",
@@ -12,7 +12,7 @@
     }],
     "minimum-stability": "dev",
     "require": {        
-        "immersioninteractive/Laravel-IIResponse": "dev-master"
+        "immersioninteractive/ResponseController": "dev-master"
     },
     "extra": {
         "laravel": {
