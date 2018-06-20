@@ -1,0 +1,32 @@
+{
+    "name": "immersioninteractive/GenericController",
+    "type": "library",
+    "description": "Generic Controller class to make our work easier with Laravel",
+    "keywords": ["Laravel","Generic"],
+    "homepage": "https://github.com/leosalass/GenericController",
+    "license": "MIT",
+    "authors": [{
+        "name": "Leonardo Salas",
+        "email": "info@immersioninteractive.com",
+        "role": "Full Stack Developer"
+    }],
+    "minimum-stability": "dev",
+    "require": {        
+        "immersioninteractive/ResponseController": "dev-master"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Immersioninteractive\\GenericController\\IIControllerServiceProvider"
+            ],
+            "aliases": {
+                "IIController": "Immersioninteractive\\GenericController\\IIControllerFacade"
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Immersioninteractive\\GenericController\\": "src/"
+        }
+    }
+}
