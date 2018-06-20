@@ -1,5 +1,5 @@
 {
-    "name": "immersioninteractive/GenericController",
+    "name": "immersioninteractive/Laravel-IIController",
     "type": "library",
     "description": "Generic Controller class to make our work easier with Laravel",
     "keywords": ["Laravel","Generic"],
@@ -12,7 +12,7 @@
     }],
     "minimum-stability": "dev",
     "require": {        
-        "immersioninteractive/ResponseController": "dev-master"
+        "immersioninteractive/Laravel-IIResponse": "dev-master"
     },
     "extra": {
         "laravel": {
