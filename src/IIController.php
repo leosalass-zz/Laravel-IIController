@@ -5,25 +5,28 @@ namespace Immersioninteractive\GenericController;
 use App\Http\Controllers\Controller;
 use IIResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
+use Immersioninteractive\ToolsController\IITools;
 use Validator;
 
 class IIController extends Controller
 {
-    public function base64_to_file($base64img, $user_id){
-        
+    public function base64_to_file($base64img, $user_id)
+    {
+
     }
 
     public function store($request, $model, $current_user_fk = null, $parent_counter = null)
     {
-        $data = $request;
+        $data = $request->toArray();
         if ($current_user_fk != null) {
             $data = $request->all() + [$current_user_fk => Auth::User()->id];
         }
 
         if (!$object = $model::create($data)) {
             IIResponse::set_errors("Error creando el registro");
-            IIResponse::response();
+            return IIResponse::response();
         }
 
         if ($parent_counter != null) {
@@ -45,36 +48,9 @@ class IIController extends Controller
         /*
          * base64_image[TABLE_FIELD_NAME][] = BASE64_IMAGE_FORMAT
          */
-        if (isset($request->base64_image)) {
+        if ($request->exists('base64_image')) {
 
-            $keys = array_keys($request->base64_image);
-
-            $model_name_array = explode('\\', $model);
-            $model_name = strtolower($model_name_array[1]);
-            $directory_path = "$model_name/id/$object->id";
-            $extension = 'jpg';
-
-            foreach ($keys as $field_name) {
-                foreach ($request->base64_image[$field_name] as $base64_image) {
-
-                    $file_name = date("Ymdhis") . rand(11111, 99999);
-                    $full_name = "$file_name.$extension";
-                    $url = URL::to('/') . DIRECTORY_SEPARATOR . ToolsController::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
-
-                    try {
-                        ToolsController::base64_to_file($base64_image, $full_name, $directory_path);
-                        $object->$field_name = $url;
-                        $object->save();
-                        IIResponse::set_messages("registro actualizado con el nombre de la imagen");
-                    } catch (\Exception $e) {
-                        IIResponse::set_errors(true);
-                        IIResponse::set_messages($e->getMessage());
-                    }
-
-                    $request['image'] = "$file_name.$extension";
-
-                }
-            }
+            $this->base64_image($request, $model, $object);
         }
 
         IIResponse::set_data(['id' => $object->id]);
@@ -114,7 +90,7 @@ class IIController extends Controller
                  * Custom Model method that returns an array with relation names
                  */
                 $relations = $model::relation_names();
-                
+
                 $object['relations'] = $relations;
                 foreach ($relations as $relation_name) {
                     $object[$relation_name] = $object->$relation_name;
@@ -151,6 +127,14 @@ class IIController extends Controller
             return IIResponse::response();
         }
 
+        /*
+         * base64_image[TABLE_FIELD_NAME][] = BASE64_IMAGE_FORMAT
+         */
+        if ($request->exists('base64_image')) {
+
+            $this->base64_image($request, $model, $object, true);
+        }
+
         IIResponse::set_status_code('OK');
         return IIResponse::response();
     }
@@ -182,5 +166,45 @@ class IIController extends Controller
 
         IIResponse::set_status_code('OK');
         return IIResponse::response();
+    }
+
+    public function base64_image($request, $model, $object, $remove_images = false)
+    {
+        $keys = array_keys($request->base64_image);
+
+        try {
+            $model_name_array = explode('\\', $model);
+            $model_name = strtolower($model_name_array[1]);
+            $directory_path = "$model_name/id/$object->id";
+            $extension = 'jpg';
+        } catch (\Exception $e) {}
+
+        foreach ($keys as $field_name) {
+
+            $directory_path .= DIRECTORY_SEPARATOR . $field_name;
+
+            $file_name = date("Ymdhis") . rand(11111, 99999);
+            $full_name = "$file_name.$extension";
+            $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
+            $url_field = $field_name . '_url';
+
+            if ($remove_images && $object->$field_name != null) {
+                $file = public_path(DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $object->$field_name);
+                try {
+                    unlink($file);
+                } catch (\Exception $e) {}
+            }
+
+            foreach ($request->base64_image[$field_name] as $base64_image) {
+
+                IITools::base64_to_file($base64_image, $full_name, $directory_path);
+                $object->$field_name = $full_name;
+                $object->$url_field = $url;
+                $object->save();
+
+                $request['image'] = "$file_name.$extension";
+
+            }
+        }
     }
 }
