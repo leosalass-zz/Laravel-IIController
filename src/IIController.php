@@ -10,6 +10,10 @@ use Validator;
 
 class IIController extends Controller
 {
+    public function base64_to_file($base64img, $user_id){
+        
+    }
+
     public function store($request, $model, $current_user_fk = null, $parent_counter = null)
     {
         $data = $request;
@@ -34,7 +38,42 @@ class IIController extends Controller
                 IIResponse::set_errors($e->getMessage());
                 IIResponse::set_status_code('BAD REQUEST');
 
-                return ResponseController::response();
+                return IIResponse::response();
+            }
+        }
+
+        /*
+         * base64_image[TABLE_FIELD_NAME][] = BASE64_IMAGE_FORMAT
+         */
+        if (isset($request->base64_image)) {
+
+            $keys = array_keys($request->base64_image);
+
+            $model_name_array = explode('\\', $model);
+            $model_name = strtolower($model_name_array[1]);
+            $directory_path = "$model_name/id/$object->id";
+            $extension = 'jpg';
+
+            foreach ($keys as $field_name) {
+                foreach ($request->base64_image[$field_name] as $base64_image) {
+
+                    $file_name = date("Ymdhis") . rand(11111, 99999);
+                    $full_name = "$file_name.$extension";
+                    $url = URL::to('/') . DIRECTORY_SEPARATOR . ToolsController::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
+
+                    try {
+                        ToolsController::base64_to_file($base64_image, $full_name, $directory_path);
+                        $object->$field_name = $url;
+                        $object->save();
+                        IIResponse::set_messages("registro actualizado con el nombre de la imagen");
+                    } catch (\Exception $e) {
+                        IIResponse::set_errors(true);
+                        IIResponse::set_messages($e->getMessage());
+                    }
+
+                    $request['image'] = "$file_name.$extension";
+
+                }
             }
         }
 
