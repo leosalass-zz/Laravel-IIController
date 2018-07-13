@@ -132,7 +132,7 @@ class IIController extends Controller
     public function update(Request $request, $model, $request_exceptions_array = [])
     {
         try {
-            $object = $model::where('id', $request->id);
+            $object = $model::where('id', $request->id)->first();
             $object->update($request->except($request_exceptions_array));
             IIResponse::set_data(['id' => $request->id]);
         } catch (\Exception $e) {
