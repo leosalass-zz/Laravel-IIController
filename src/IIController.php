@@ -5,6 +5,7 @@ namespace Immersioninteractive\GenericController;
 use App\Http\Controllers\Controller;
 use IIResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Immersioninteractive\ToolsController\IITools;
@@ -21,7 +22,7 @@ class IIController extends Controller
     {
         $data = $request->toArray();
         if ($current_user_fk != null) {
-            $data = $request->all() + [$current_user_fk => Auth::User()->id];
+            $data = $request->all() + [$current_user_fk => Auth::id()];
         }
 
         if (!$object = $model::create($data)) {
@@ -59,7 +60,7 @@ class IIController extends Controller
         return IIResponse::response();
     }
 
-    public function get($model, $id = null, $pagination = null)
+    public function get($model, $id = null, $pagination = null, $unset_array = null)
     {
         if ($id != null) {
 
@@ -99,17 +100,31 @@ class IIController extends Controller
 
             }
 
+            if ($unset_array != null) {
+                foreach ($unset_array as $item) {
+                    unset($object->$item);
+                }
+            }
+
             IIResponse::set_data($object);
             return IIResponse::response();
         }
 
         if ($pagination != null) {
-            $object = $model::paginate($pagination);
+            $objects = $model::paginate($pagination);
         } else {
-            $object = $model::all();
+            $objects = $model::all();
         }
 
-        IIResponse::set_data($object);
+        if ($unset_array != null) {
+            foreach ($objects as $object) {
+                foreach ($unset_array as $item) {
+                    unset($object->$item);
+                }
+            }
+        }
+
+        IIResponse::set_data($objects);
 
         return IIResponse::response();
     }
