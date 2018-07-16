@@ -13,7 +13,7 @@ use Validator;
 
 class IIController extends Controller
 {
-    public function store($request, $model, $current_user_fk = null, $parent_counter = null)
+    public function store($request, $model, $current_user_fk = null, $parent_counter = null, $return_only_id = false)
     {
         $data = $request->toArray();
         if ($current_user_fk != null) {
@@ -49,7 +49,13 @@ class IIController extends Controller
             $this->base64_image($request, $model, $object);
         }
 
-        IIResponse::set_data(['id' => $object->id]);
+        $response = $object;
+
+        if($return_only_id){
+            $response = ['id' => $object->id];
+        }
+
+        IIResponse::set_data($response);
         IIResponse::set_status_code('CREATED');
 
         return IIResponse::response();
