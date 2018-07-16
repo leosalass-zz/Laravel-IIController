@@ -13,11 +13,6 @@ use Validator;
 
 class IIController extends Controller
 {
-    public function base64_to_file($base64img, $user_id)
-    {
-
-    }
-
     public function store($request, $model, $current_user_fk = null, $parent_counter = null)
     {
         $data = $request->toArray();
@@ -202,15 +197,20 @@ class IIController extends Controller
             $full_name = "$file_name.$extension";
             $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
             $url_field = $field_name . '_url';
-
+            
             if ($remove_images && $object->$field_name != null) {
                 $file = public_path(DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $object->$field_name);
                 try {
                     unlink($file);
                 } catch (\Exception $e) {}
-            }
-
-            foreach ($request->base64_image[$field_name] as $base64_image) {
+                }
+                
+                foreach ($request->base64_image[$field_name] as $base64_image) {
+                    
+                    if($model_name == 'user' && $field_name == 'image'){
+                        $full_name = "user.$extension";
+                        $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
+                    }                
 
                 IITools::base64_to_file($base64_image, $full_name, $directory_path);
                 $object->$field_name = $full_name;
