@@ -130,6 +130,37 @@ class IIController extends Controller
         return IIResponse::response();
     }
 
+    public function get_child($model, $id, $relation_name){
+        /**
+         * to make this function work:
+         * 1- a has many relation must be set in the model of this controller
+         * 2- the relation must has the name of the related model table
+         */
+        $table = with(new $model)->getTable();                
+        
+        $validator = Validator::make(['id' => $id], [
+            'id' => "required|integer|min:1|exists:$table,id",
+        ]);
+
+        if ($validator->fails()) {
+            foreach($validator->errors()->toArray() as $index => $e){
+                IIResponse::set_errors($e[0]);
+            }
+            
+            return IIResponse::response();
+        }    
+        
+        $object = $model::find($id);
+        
+        if ($object->$relation_name) {            
+            return IIResponse::response($object->$relation_name);
+        }else{            
+            IIResponse::set_errors("the child does not exists");
+            return IIResponse::response();
+        }
+
+    }
+
     public function update(Request $request, $model, $request_exceptions_array = [])
     {
         try {
