@@ -205,7 +205,7 @@ class IIController extends Controller
 
     }
 
-    public function update(Request $request, $model, $request_exceptions_array = [], $relational_data = [])
+    public function update(Request $request, $model, $request_exceptions_array = [], $relational_data = [], $return_only_id = false)
     {
         /**
          * Example of relational data
@@ -228,7 +228,14 @@ class IIController extends Controller
         try {
             $object = $model::where('id', $request->id)->first();
             $object->update($request->except($request_exceptions_array));
-            IIResponse::set_data(['id' => $request->id]);
+
+            if ($return_only_id) {
+                $response = ['id' => $object->id];
+            }else{
+                $response = $object;
+            }
+
+            IIResponse::set_data($object);
         } catch (\Exception $e) {
             IIResponse::set_errors("error actualizando el registro");
             IIResponse::set_errors($e->getMessage());
