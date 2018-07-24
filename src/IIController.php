@@ -13,8 +13,26 @@ use Validator;
 
 class IIController extends Controller
 {
-    public function store($request, $model, $current_user_fk = null, $parent_counter = null, $return_only_id = false)
+    public function store($request, $model, $current_user_fk = null, $parent_counter = null, $relational_data = [], $return_only_id = false)
     {
+        /**
+         * Example of relational data
+        $relational_data = [
+        [
+        'model_name' => 'App\Country',
+        'matching_column_on_request' => 'id_country',
+        'wanted_column' => 'name',
+        'main_model_column' => 'country_name',
+        ],
+        [
+        'model_name' => 'App\City',
+        'matching_column_on_request' => 'id_city',
+        'wanted_column' => 'name',
+        'main_model_column' => 'city_name',
+        ],
+        ];
+         */
+
         $data = $request->toArray();
         if ($current_user_fk != null) {
             $data = $request->all() + [$current_user_fk => Auth::id()];
@@ -22,6 +40,26 @@ class IIController extends Controller
 
         if (!$object = $model::create($data)) {
             IIResponse::set_errors("Error creando el registro");
+            return IIResponse::response();
+        }
+
+        /**
+         * Relational data
+         */
+        try {
+            foreach ($relational_data as $r) {
+                $m = $r['model_name'];
+                $matching_column_on_request = $r['matching_column_on_request'];
+                $obj_related = $m::find($request->$matching_column_on_request);
+                $wanted_column = $r['wanted_column'];
+                $main_model_column = $r['main_model_column'];
+                $object->$main_model_column = $obj_related->$wanted_column;
+                $object->save();
+            }
+        } catch (\Exception $e) {
+            IIResponse::set_errors($e->getMessage());
+            IIResponse::set_status_code('BAD REQUEST');
+
             return IIResponse::response();
         }
 
@@ -51,7 +89,7 @@ class IIController extends Controller
 
         $response = $object;
 
-        if($return_only_id){
+        if ($return_only_id) {
             $response = ['id' => $object->id];
         }
 
@@ -130,39 +168,63 @@ class IIController extends Controller
         return IIResponse::response();
     }
 
-    public function get_child($model, $id, $relation_name){
+    public function get_child($model, $id, $relation_name, $pagination = null)
+    {
         /**
          * to make this function work:
          * 1- a has many relation must be set in the model of this controller
          * 2- the relation must has the name of the related model table
          */
-        $table = with(new $model)->getTable();                
-        
+        $table = with(new $model)->getTable();
+
         $validator = Validator::make(['id' => $id], [
             'id' => "required|integer|min:1|exists:$table,id",
         ]);
 
         if ($validator->fails()) {
-            foreach($validator->errors()->toArray() as $index => $e){
+            foreach ($validator->errors()->toArray() as $index => $e) {
                 IIResponse::set_errors($e[0]);
             }
-            
             return IIResponse::response();
-        }    
-        
+        }
+
         $object = $model::find($id);
-        
-        if ($object->$relation_name) {            
-            return IIResponse::response($object->$relation_name);
-        }else{            
+
+        if ($object->$relation_name) {
+
+            if ($pagination == null) {
+                $response = $object->$relation_name;
+            } else {
+                $response = $object->$relation_name()->paginate($pagination);
+            }
+            return IIResponse::response($response);
+        } else {
             IIResponse::set_errors("the child does not exists");
             return IIResponse::response();
         }
 
     }
 
-    public function update(Request $request, $model, $request_exceptions_array = [])
+    public function update(Request $request, $model, $request_exceptions_array = [], $relational_data = [])
     {
+        /**
+         * Example of relational data
+        $relational_data = [
+        [
+        'model_name' => 'App\Country',
+        'matching_column_on_request' => 'id_country',
+        'wanted_column' => 'name',
+        'main_model_column' => 'country_name',
+        ],
+        [
+        'model_name' => 'App\City',
+        'matching_column_on_request' => 'id_city',
+        'wanted_column' => 'name',
+        'main_model_column' => 'city_name',
+        ],
+        ];
+         */
+
         try {
             $object = $model::where('id', $request->id)->first();
             $object->update($request->except($request_exceptions_array));
@@ -171,6 +233,26 @@ class IIController extends Controller
             IIResponse::set_errors("error actualizando el registro");
             IIResponse::set_errors($e->getMessage());
             IIResponse::set_status_code('BAD REQUEST');
+            return IIResponse::response();
+        }
+
+        /**
+         * Relational data
+         */
+        try {
+            foreach ($relational_data as $r) {
+                $m = $r['model_name'];
+                $matching_column_on_request = $r['matching_column_on_request'];
+                $obj_related = $m::find($request->$matching_column_on_request);
+                $wanted_column = $r['wanted_column'];
+                $main_model_column = $r['main_model_column'];
+                $object->$main_model_column = $obj_related->$wanted_column;
+                $object->save();
+            }
+        } catch (\Exception $e) {
+            IIResponse::set_errors($e->getMessage());
+            IIResponse::set_status_code('BAD REQUEST');
+
             return IIResponse::response();
         }
 
@@ -234,20 +316,20 @@ class IIController extends Controller
             $full_name = "$file_name.$extension";
             $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
             $url_field = $field_name . '_url';
-            
+
             if ($remove_images && $object->$field_name != null) {
                 $file = public_path(DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $object->$field_name);
                 try {
                     unlink($file);
                 } catch (\Exception $e) {}
+            }
+
+            foreach ($request->base64_image[$field_name] as $base64_image) {
+
+                if ($model_name == 'user' && $field_name == 'image') {
+                    $full_name = "user.$extension";
+                    $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
                 }
-                
-                foreach ($request->base64_image[$field_name] as $base64_image) {
-                    
-                    if($model_name == 'user' && $field_name == 'image'){
-                        $full_name = "user.$extension";
-                        $url = URL::to('/') . DIRECTORY_SEPARATOR . IITools::$base_image_path . $directory_path . DIRECTORY_SEPARATOR . $full_name;
-                    }                
 
                 IITools::base64_to_file($base64_image, $full_name, $directory_path);
                 $object->$field_name = $full_name;
