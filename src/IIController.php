@@ -155,6 +155,22 @@ class IIController extends Controller
             $objects = $model::all();
         }
 
+        try {
+            foreach ($objects as $object) {
+                /**
+                 * Custom Model method that returns an array with relation names
+                 */
+                $relations = $model::relation_names();
+
+                $object['relations'] = $relations;
+                foreach ($relations as $relation_name) {
+                    $object[$relation_name] = $object->$relation_name;
+                }
+            }
+        } catch (\Exception $e) {
+
+        }
+
         if ($unset_array != null) {
             foreach ($objects as $object) {
                 foreach ($unset_array as $item) {
@@ -231,7 +247,7 @@ class IIController extends Controller
 
             if ($return_only_id) {
                 $response = ['id' => $object->id];
-            }else{
+            } else {
                 $response = $object;
             }
 
