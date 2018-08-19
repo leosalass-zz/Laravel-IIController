@@ -287,8 +287,8 @@ class IIController extends Controller
             $this->base64_image($request, $model, $object, true);
         }
         
-        /* normal file upload */
-        if ($request->exists('fileToUpload')) {
+        /* normal file upload */        
+        if (isset($_FILES["fileToUpload"])) {
 
             $m = explode("\\", $model);
             $m = strtolower($m[1]);
@@ -297,7 +297,6 @@ class IIController extends Controller
             $file_name = "$m.jpg";
             $input_name = "fileToUpload";
 
-            if (isset($request->fileToUpload)) {
 
                 $file_uploaded = IITools::file_upload($input_name, $target_dir, $file_name);
                 if ($file_uploaded == null) {
@@ -305,8 +304,7 @@ class IIController extends Controller
                     return IIResponse::response();
                 }
                 $object->image_url = DIRECTORY_SEPARATOR . $file_uploaded;
-                $object->save();
-            }
+                $object->save();            
         }
 
         IIResponse::set_status_code('OK');
