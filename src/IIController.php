@@ -87,6 +87,26 @@ class IIController extends Controller
             $this->base64_image($request, $model, $object);
         }
 
+        /* normal file upload */        
+        if (isset($_FILES["fileToUpload"])) {
+
+            $m = explode("\\", $model);
+            $m = strtolower($m[1]);
+
+            $target_dir = "$m/id/$object->id";
+            $file_name = "$m.jpg";
+            $input_name = "fileToUpload";
+
+
+                $file_uploaded = IITools::file_upload($input_name, $target_dir, $file_name);
+                if ($file_uploaded == null) {
+                    IIResponse::set_errors($e->getMessage());
+                    return IIResponse::response();
+                }
+                $object->image_url = DIRECTORY_SEPARATOR . $file_uploaded;
+                $object->save();            
+        }
+
         $response = $object;
 
         if ($return_only_id) {
