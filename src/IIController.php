@@ -100,7 +100,7 @@ class IIController extends Controller
 
                 $file_uploaded = IITools::file_upload($input_name, $target_dir, $file_name);
                 if ($file_uploaded == null) {
-                    IIResponse::set_errors($e->getMessage());
+                    IIResponse::set_errors('error uploading the file');
                     return IIResponse::response();
                 }
                 $object->image_url = DIRECTORY_SEPARATOR . $file_uploaded;
@@ -320,7 +320,7 @@ class IIController extends Controller
 
                 $file_uploaded = IITools::file_upload($input_name, $target_dir, $file_name);
                 if ($file_uploaded == null) {
-                    IIResponse::set_errors($e->getMessage());
+                    IIResponse::set_errors('error uploading the file');
                     return IIResponse::response();
                 }
                 $object->image_url = DIRECTORY_SEPARATOR . $file_uploaded;
